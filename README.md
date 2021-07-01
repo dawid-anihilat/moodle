@@ -4,22 +4,23 @@ Ansible playbook created to install moodle. Done with molecule.
 Role Name
 =========
 
-A brief description of the role goes here.
+Role created as an exercise to install moodle platform. Done with isntruction from: https://docs.moodle.org/311/en/Step-by-step_Installation_Guide_for_Ubuntu 
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Create with ansible [core 2.11.2] for Ubuntu 18.04
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+mysql_root_pass - root mysql password
+moodle_db_pass - moodle database user password
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+n/a
 
 Example Playbook
 ----------------
@@ -28,14 +29,14 @@ Including an example of how to use your role (for instance, with variables passe
 
     - hosts: servers
       roles:
-         - { role: username.rolename, x: 42 }
+         - { role: anihilat.moodle, mysql_root_pass: secret, moodle_db_pass: secret }
 
 License
 -------
 
-BSD
+No license
 
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Anihilat
