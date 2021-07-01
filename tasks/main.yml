@@ -1,0 +1,150 @@
+---
+# tasks file for moodle
+- name: "Update caches" 
+  apt:
+    update_cache: yes
+
+- name: "Install Apache/MySQL/PHP"
+  ansible.builtin.apt:
+    pkg:
+    - apache2
+    - mysql-client
+    - mysql-server
+    - php
+    - libapache2-mod-php
+    state: present
+
+- name: "Install Additional Software"
+  apt:
+    pkg:
+    - graphviz
+    - aspell
+    - ghostscript
+    - clamav
+    - php-pspell
+    - php-curl
+    - php-gd
+    - php-intl
+    - php-mysql
+    - php-xml
+    - php-xmlrpc
+    - php-ldap
+    - php-zip
+    - php-soap
+    - php-mbstring
+    - python3-pymysql
+    state: present
+
+- name: "Restart Apache"
+  ansible.builtin.service:
+    state: started
+    name: apache2
+    enabled: yes
+
+- name: "Install Git"
+  apt:
+    pkg:
+    - git
+    state: present
+
+- name: "Clone a repository"
+  ansible.builtin.git:
+    repo: git://git.moodle.org/moodle.git
+    dest: /opt/moodle
+    single_branch: yes
+    version: MOODLE_39_STABLE
+
+- name: "Create folder moddle"
+  ansible.builtin.file:
+    path: "/var/moodle"
+    owner: "www-data"
+    mode: "0777"
+    state: directory
+
+- name: "Copy moddle files"
+  ansible.builtin.copy:
+    src: "/opt/moodle/"
+    dest: "/var/www/html/moodle"
+    mode: '0755'
+    remote_src: yes
+
+- name: "Create folder moddledata"
+  ansible.builtin.file:
+    path: "/var/moodledata"
+    owner: "www-data"
+    mode: "0777"
+    state: directory
+
+- name: "Remove from mysqld.cnf default_storage_engine"
+  ansible.builtin.lineinfile:
+    path: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+    state: absent
+    regexp: '^default_storage_engine = innodb'
+
+- name: "Remove from mysqld.cnf innodb_file_per_table"
+  ansible.builtin.lineinfile:
+    path: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+    state: absent
+    regexp: '^innodb_file_per_table = 1'
+
+- name: "Remove from mysqld.cnf innodb_file_format"
+  ansible.builtin.lineinfile:
+    path: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+    state: absent
+    regexp: '^innodb_file_format = Barracuda'
+
+- name: "Start Mysql Server"
+  ansible.builtin.service:
+    state: started
+    name: mysql
+    enabled: yes
+
+- name: "Root Password verify and setup"
+  block:
+  - name: "Simple select query to check"
+    community.mysql.mysql_query:
+      login_host: 'localhost'
+      login_user: 'root'
+      login_password: '{{ mysql_root_pass }}'
+      query: SELECT * FROM mysql.user
+
+  rescue:
+  - name: Change the authentication plugin of MySQL root user to mysql_native_password
+    ansible.builtin.command: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
+
+  - name: "Flush Privileges"
+    ansible.builtin.command: mysql -u root -e 'FLUSH PRIVILEGES'
+
+  - name: "Set MySQL root password"
+    community.mysql.mysql_user:
+      login_host: 'localhost'
+      login_user: 'root'
+      login_password: ''
+      name: 'root'
+      password: '{{ mysql_root_pass }}'
+      state: present
+
+- name: "Create a new database with name 'moodle'"
+  community.mysql.mysql_db:
+    login_host: 'localhost'
+    login_user: 'root'
+    login_password: '{{ mysql_pass }}'
+    name: "moodle"
+    state: present
+    encoding: "utf8mb4"
+    collation: "utf8mb4_unicode_ci"
+
+- name: "Create moodledude database account and set permissions"
+  community.mysql.mysql_user:
+    login_host: 'localhost'
+    login_user: 'root'
+    login_password: '{{ mysql_root_pass }}'
+    state: present
+    name: "moodledude"
+    password: '{{ moodle_db_pass }}'
+    priv:
+      'moodle.*': 'SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER'
+
+- name: "Check if install is accessible"
+  ansible.builtin.uri:
+     url: http://127.0.0.1/moodle/install.php

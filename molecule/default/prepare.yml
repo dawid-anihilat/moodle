@@ -1,0 +1,15 @@
+---
+- name: Playbook
+  hosts: all
+  tasks:
+  - name: "Update cache"
+    ansible.builtin.apt:
+      update_cache: yes
+
+  - name: "Install dbus"
+    ansible.builtin.apt:
+      pkg: 
+        - dbus
+        - dialog
+        - apt-utils
+      state: present

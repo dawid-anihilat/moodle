@@ -1,0 +1,5 @@
+---
+# defaults file for moodle
+
+mysql_root_pass: secret
+moodle_db_pass: secret
